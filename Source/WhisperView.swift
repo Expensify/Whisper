@@ -11,7 +11,10 @@ open class WhisperView: UIView {
     static let offsetHeight: CGFloat = height * 2
     static let imageSize: CGFloat = 14
     static let loaderTitleOffset: CGFloat = 5
+    static let labelTotalMargins: CGFloat = 60
   }
+
+  public var totalFrameHeight: CGFloat = 0
 
   lazy fileprivate(set) var transformViews: [UIView] = [self.titleLabel, self.complementImageView]
 
@@ -19,7 +22,7 @@ open class WhisperView: UIView {
     let label = UILabel()
     label.textAlignment = .center
     label.font = UIFont(name: "HelveticaNeue", size: 13)
-    label.frame.size.width = UIScreen.main.bounds.width - 60
+    label.frame.size.width = UIScreen.main.bounds.width - Dimensions.labelTotalMargins
 
     return label
     }()
@@ -54,7 +57,18 @@ open class WhisperView: UIView {
       complementImageView.image = whisperImages?.first
     }
 
-    frame = CGRect(x: 0, y: height, width: UIScreen.main.bounds.width, height: Dimensions.height)
+    let labelWidth = UIScreen.main.bounds.width - Dimensions.labelTotalMargins
+    let boundingSize = CGSize(width: labelWidth, height: CGFloat.greatestFiniteMagnitude)
+    let attributes = [NSFontAttributeName: UIFont(name: "HelveticaNeue", size: 13)!];
+    let boundingBox = NSString(string: message.title).boundingRect(with: boundingSize, options: .usesLineFragmentOrigin, attributes: attributes, context: nil)
+
+    let calculatedHeight = floor(boundingBox.height)
+    let numberOfLines = floor(calculatedHeight / 15)
+    totalFrameHeight = Dimensions.height * numberOfLines;
+    titleLabel.numberOfLines = Int(numberOfLines)
+
+    frame = CGRect(x: 0, y: height, width: UIScreen.main.bounds.width, height: totalFrameHeight)
+
     for subview in transformViews { addSubview(subview) }
 
     titleLabel.sizeToFit()

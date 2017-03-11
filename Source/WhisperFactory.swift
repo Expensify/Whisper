@@ -107,12 +107,12 @@ class WhisperFactory: NSObject {
     moveControllerViews(true)
 
     UIView.animate(withDuration: AnimationTiming.movement, animations: {
-      self.whisperView.frame.size.height = WhisperView.Dimensions.height
+      self.whisperView.frame.size.height = self.whisperView.totalFrameHeight
       for subview in self.whisperView.transformViews {
         subview.frame.origin.y = 0
 
         if subview == self.whisperView.complementImageView {
-          subview.frame.origin.y = (WhisperView.Dimensions.height - WhisperView.Dimensions.imageSize) / 2
+          subview.frame.origin.y = (self.whisperView.totalFrameHeight - WhisperView.Dimensions.imageSize) / 2
         }
 
         subview.alpha = 1
@@ -124,12 +124,12 @@ class WhisperFactory: NSObject {
     moveControllerViews(true)
 
     UIView.animate(withDuration: AnimationTiming.movement, animations: {
-      self.whisperView.frame.size.height = WhisperView.Dimensions.height
+      self.whisperView.frame.size.height = self.whisperView.totalFrameHeight
       for subview in self.whisperView.transformViews {
         subview.frame.origin.y = 0
 
         if subview == self.whisperView.complementImageView {
-          subview.frame.origin.y = (WhisperView.Dimensions.height - WhisperView.Dimensions.imageSize) / 2
+          subview.frame.origin.y = (self.whisperView.totalFrameHeight - WhisperView.Dimensions.imageSize) / 2
         }
 
         subview.alpha = 1
@@ -223,8 +223,8 @@ class WhisperFactory: NSObject {
       return
     }
 
-    if !(edgeInsetHeight == WhisperView.Dimensions.height && down) {
-      edgeInsetHeight = down ? WhisperView.Dimensions.height : -WhisperView.Dimensions.height
+    if !(edgeInsetHeight == self.whisperView.totalFrameHeight && down) {
+      edgeInsetHeight = down ? self.whisperView.totalFrameHeight : -self.whisperView.totalFrameHeight
 
       UIView.animate(withDuration: AnimationTiming.movement, animations: {
         self.performControllerMove(visibleController)
@@ -295,9 +295,9 @@ extension WhisperFactory: UINavigationControllerDelegate {
     for subview in navigationController.navigationBar.subviews where subview is WhisperView {
       moveControllerViews(true)
 
-      if let index = navigationController.viewControllers.index(of: viewController) , index > 0 {
-        edgeInsetHeight = -WhisperView.Dimensions.height
-        performControllerMove(navigationController.viewControllers[Int(index) - 1])
+        if let index = navigationController.viewControllers.index(of: viewController) , index > 0 {
+            edgeInsetHeight = -self.whisperView.totalFrameHeight
+            performControllerMove(navigationController.viewControllers[Int(index) - 1])
         break
       }
     }
