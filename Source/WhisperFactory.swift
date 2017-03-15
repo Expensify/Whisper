@@ -104,8 +104,6 @@ class WhisperFactory: NSObject {
   // MARK: - Presentation
 
   func presentView() {
-    moveControllerViews(true)
-
     UIView.animate(withDuration: AnimationTiming.movement, animations: {
       self.whisperView.frame.size.height = self.whisperView.totalFrameHeight
       for subview in self.whisperView.transformViews {
@@ -121,8 +119,6 @@ class WhisperFactory: NSObject {
   }
 
   func showView() {
-    moveControllerViews(true)
-
     UIView.animate(withDuration: AnimationTiming.movement, animations: {
       self.whisperView.frame.size.height = self.whisperView.totalFrameHeight
       for subview in self.whisperView.transformViews {
@@ -158,8 +154,6 @@ class WhisperFactory: NSObject {
   }
 
   func hideView() {
-    moveControllerViews(false)
-
     UIView.animate(withDuration: AnimationTiming.movement, animations: {
       self.whisperView.frame.size.height = 0
       for subview in self.whisperView.transformViews {
@@ -173,78 +167,78 @@ class WhisperFactory: NSObject {
 
   // MARK: - Timer methods
 
-    func delayFired(_ timer: Timer) {
-        hideView()
+  func delayFired(_ timer: Timer) {
+    hideView()
+  }
+
+  func presentFired(_ timer: Timer) {
+    guard let navigationController = self.navigationController,
+      let userInfo = timer.userInfo as? [String : AnyObject],
+      let title = userInfo["title"] as? String,
+      let textColor = userInfo["textColor"] as? UIColor,
+      let backgroundColor = userInfo["backgroundColor"] as? UIColor,
+      let actionString = userInfo["action"] as? String else { return }
+
+    var images: [UIImage]? = nil
+
+    if let imageArray = userInfo["images"] as? [UIImage]? { images = imageArray }
+
+    let action = WhisperAction(rawValue: actionString)
+    let message = Message(title: title, textColor: textColor, backgroundColor: backgroundColor, images: images)
+
+    whisperView = WhisperView(height: navigationController.navigationBar.frame.height, message: message)
+    navigationController.navigationBar.addSubview(whisperView)
+    whisperView.frame.size.height = 0
+
+    var maximumY = navigationController.navigationBar.frame.height
+
+    for subview in navigationController.navigationBar.subviews {
+      if subview.frame.maxY > maximumY && subview.frame.height > 0 { maximumY = subview.frame.maxY }
     }
 
-    func presentFired(_ timer: Timer) {
-        guard let navigationController = self.navigationController,
-            let userInfo = timer.userInfo as? [String : AnyObject],
-            let title = userInfo["title"] as? String,
-            let textColor = userInfo["textColor"] as? UIColor,
-            let backgroundColor = userInfo["backgroundColor"] as? UIColor,
-            let actionString = userInfo["action"] as? String else { return }
-        
-        var images: [UIImage]? = nil
+    whisperView.frame.origin.y = maximumY
 
-        if let imageArray = userInfo["images"] as? [UIImage]? { images = imageArray }
+    action == .present ? presentView() : showView()
+  }
 
-        let action = WhisperAction(rawValue: actionString)
-        let message = Message(title: title, textColor: textColor, backgroundColor: backgroundColor, images: images)
+  // MARK: - Handling screen orientation
 
-        whisperView = WhisperView(height: navigationController.navigationBar.frame.height, message: message)
-        navigationController.navigationBar.addSubview(whisperView)
-        whisperView.frame.size.height = 0
+  func orientationDidChange() {
+    guard let navigationController = self.navigationController else { return }
+    for subview in navigationController.navigationBar.subviews {
+      guard let whisper = subview as? WhisperView else { continue }
 
-        var maximumY = navigationController.navigationBar.frame.height
+      var maximumY = navigationController.navigationBar.frame.height
+      for subview in navigationController.navigationBar.subviews where subview != whisper {
+        if subview.frame.maxY > maximumY && subview.frame.height > 0 { maximumY = subview.frame.maxY }
+      }
 
-        for subview in navigationController.navigationBar.subviews {
-            if subview.frame.maxY > maximumY && subview.frame.height > 0 { maximumY = subview.frame.maxY }
-        }
-
-        whisperView.frame.origin.y = maximumY
-
-        action == .present ? presentView() : showView()
+      whisper.frame = CGRect(
+        x: whisper.frame.origin.x,
+        y: maximumY,
+        width: UIScreen.main.bounds.width,
+        height: whisper.frame.size.height)
+      whisper.setupFrames()
     }
-
-    // MARK: - Handling screen orientation
-
-    func orientationDidChange() {
-        guard let navigationController = self.navigationController else { return }
-        for subview in navigationController.navigationBar.subviews {
-            guard let whisper = subview as? WhisperView else { continue }
-
-            var maximumY = navigationController.navigationBar.frame.height
-            for subview in navigationController.navigationBar.subviews where subview != whisper {
-                if subview.frame.maxY > maximumY && subview.frame.height > 0 { maximumY = subview.frame.maxY }
-            }
-
-            whisper.frame = CGRect(
-                x: whisper.frame.origin.x,
-                y: maximumY,
-                width: UIScreen.main.bounds.width,
-                height: whisper.frame.size.height)
-            whisper.setupFrames()
-        }
-    }
+  }
 }
 
 // MARK: UINavigationControllerDelegate
 
 extension WhisperFactory: UINavigationControllerDelegate {
 
-    func navigationController(_ navigationController: UINavigationController, willShow viewController: UIViewController, animated: Bool) {
-        var maximumY = navigationController.navigationBar.frame.maxY - UIApplication.shared.statusBarFrame.height
+  func navigationController(_ navigationController: UINavigationController, willShow viewController: UIViewController, animated: Bool) {
+    var maximumY = navigationController.navigationBar.frame.maxY - UIApplication.shared.statusBarFrame.height
 
-        for subview in navigationController.navigationBar.subviews {
-            if subview is WhisperView { navigationController.navigationBar.bringSubview(toFront: subview) }
+    for subview in navigationController.navigationBar.subviews {
+      if subview is WhisperView { navigationController.navigationBar.bringSubview(toFront: subview) }
 
-            if subview.frame.maxY > maximumY && !(subview is WhisperView) {
-                maximumY = subview.frame.maxY
-            }
-        }
-
-        whisperView.frame.origin.y = maximumY
+      if subview.frame.maxY > maximumY && !(subview is WhisperView) {
+        maximumY = subview.frame.maxY
+      }
     }
+
+    whisperView.frame.origin.y = maximumY
+  }
 
 }
