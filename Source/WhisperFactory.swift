@@ -173,133 +173,78 @@ class WhisperFactory: NSObject {
 
   // MARK: - Timer methods
 
-  func delayFired(_ timer: Timer) {
-    hideView()
-  }
-
-  func presentFired(_ timer: Timer) {
-    guard let navigationController = self.navigationController,
-      let userInfo = timer.userInfo as? [String : AnyObject],
-      let title = userInfo["title"] as? String,
-      let textColor = userInfo["textColor"] as? UIColor,
-      let backgroundColor = userInfo["backgroundColor"] as? UIColor,
-      let actionString = userInfo["action"] as? String else { return }
-
-    var images: [UIImage]? = nil
-
-    if let imageArray = userInfo["images"] as? [UIImage]? { images = imageArray }
-
-    let action = WhisperAction(rawValue: actionString)
-    let message = Message(title: title, textColor: textColor, backgroundColor: backgroundColor, images: images)
-
-    whisperView = WhisperView(height: navigationController.navigationBar.frame.height, message: message)
-    navigationController.navigationBar.addSubview(whisperView)
-    whisperView.frame.size.height = 0
-
-    var maximumY = navigationController.navigationBar.frame.height
-
-    for subview in navigationController.navigationBar.subviews {
-      if subview.frame.maxY > maximumY && subview.frame.height > 0 { maximumY = subview.frame.maxY }
+    func delayFired(_ timer: Timer) {
+        hideView()
     }
 
-    whisperView.frame.origin.y = maximumY
+    func presentFired(_ timer: Timer) {
+        guard let navigationController = self.navigationController,
+            let userInfo = timer.userInfo as? [String : AnyObject],
+            let title = userInfo["title"] as? String,
+            let textColor = userInfo["textColor"] as? UIColor,
+            let backgroundColor = userInfo["backgroundColor"] as? UIColor,
+            let actionString = userInfo["action"] as? String else { return }
+        
+        var images: [UIImage]? = nil
 
-    action == .present ? presentView() : showView()
-  }
+        if let imageArray = userInfo["images"] as? [UIImage]? { images = imageArray }
 
-  // MARK: - Animations
+        let action = WhisperAction(rawValue: actionString)
+        let message = Message(title: title, textColor: textColor, backgroundColor: backgroundColor, images: images)
 
-  func moveControllerViews(_ down: Bool) {
-    guard let navigationController = self.navigationController,
-        let visibleController = navigationController.visibleViewController
-      , Config.modifyInset
-      else { return }
+        whisperView = WhisperView(height: navigationController.navigationBar.frame.height, message: message)
+        navigationController.navigationBar.addSubview(whisperView)
+        whisperView.frame.size.height = 0
 
-    let stackCount = navigationController.viewControllers.count
+        var maximumY = navigationController.navigationBar.frame.height
 
-    if down {
-      navigationStackCount = stackCount
-    } else if navigationStackCount != stackCount {
-      return
-    }
-
-    if !(edgeInsetHeight == self.whisperView.totalFrameHeight && down) {
-      edgeInsetHeight = down ? self.whisperView.totalFrameHeight : -self.whisperView.totalFrameHeight
-
-      UIView.animate(withDuration: AnimationTiming.movement, animations: {
-        self.performControllerMove(visibleController)
-      })
-    }
-  }
-
-  func performControllerMove(_ viewController: UIViewController) {
-    guard Config.modifyInset else { return }
-
-    if let tableView = viewController.view as? UITableView
-      , viewController is UITableViewController {
-        tableView.contentInset = UIEdgeInsetsMake(tableView.contentInset.top + edgeInsetHeight, tableView.contentInset.left, tableView.contentInset.bottom, tableView.contentInset.right)
-    } else if let collectionView = viewController.view as? UICollectionView
-      , viewController is UICollectionViewController {
-        collectionView.contentInset = UIEdgeInsetsMake(collectionView.contentInset.top + edgeInsetHeight, collectionView.contentInset.left, collectionView.contentInset.bottom, collectionView.contentInset.right)
-    } else {
-      for view in viewController.view.subviews {
-        if let scrollView = view as? UIScrollView {
-          scrollView.contentInset = UIEdgeInsetsMake(scrollView.contentInset.top + edgeInsetHeight, scrollView.contentInset.left, scrollView.contentInset.bottom, scrollView.contentInset.right)
+        for subview in navigationController.navigationBar.subviews {
+            if subview.frame.maxY > maximumY && subview.frame.height > 0 { maximumY = subview.frame.maxY }
         }
-      }
+
+        whisperView.frame.origin.y = maximumY
+
+        action == .present ? presentView() : showView()
     }
-  }
 
-  // MARK: - Handling screen orientation
+    // MARK: - Handling screen orientation
 
-  func orientationDidChange() {
-    guard let navigationController = self.navigationController else { return }
-    for subview in navigationController.navigationBar.subviews {
-      guard let whisper = subview as? WhisperView else { continue }
+    func orientationDidChange() {
+        guard let navigationController = self.navigationController else { return }
+        for subview in navigationController.navigationBar.subviews {
+            guard let whisper = subview as? WhisperView else { continue }
 
-      var maximumY = navigationController.navigationBar.frame.height
-      for subview in navigationController.navigationBar.subviews where subview != whisper {
-        if subview.frame.maxY > maximumY && subview.frame.height > 0 { maximumY = subview.frame.maxY }
-      }
+            var maximumY = navigationController.navigationBar.frame.height
+            for subview in navigationController.navigationBar.subviews where subview != whisper {
+                if subview.frame.maxY > maximumY && subview.frame.height > 0 { maximumY = subview.frame.maxY }
+            }
 
-      whisper.frame = CGRect(
-        x: whisper.frame.origin.x,
-        y: maximumY,
-        width: UIScreen.main.bounds.width,
-        height: whisper.frame.size.height)
-      whisper.setupFrames()
+            whisper.frame = CGRect(
+                x: whisper.frame.origin.x,
+                y: maximumY,
+                width: UIScreen.main.bounds.width,
+                height: whisper.frame.size.height)
+            whisper.setupFrames()
+        }
     }
-  }
 }
 
 // MARK: UINavigationControllerDelegate
 
 extension WhisperFactory: UINavigationControllerDelegate {
 
-  func navigationController(_ navigationController: UINavigationController, willShow viewController: UIViewController, animated: Bool) {
-    var maximumY = navigationController.navigationBar.frame.maxY - UIApplication.shared.statusBarFrame.height
+    func navigationController(_ navigationController: UINavigationController, willShow viewController: UIViewController, animated: Bool) {
+        var maximumY = navigationController.navigationBar.frame.maxY - UIApplication.shared.statusBarFrame.height
 
-    for subview in navigationController.navigationBar.subviews {
-      if subview is WhisperView { navigationController.navigationBar.bringSubview(toFront: subview) }
+        for subview in navigationController.navigationBar.subviews {
+            if subview is WhisperView { navigationController.navigationBar.bringSubview(toFront: subview) }
 
-      if subview.frame.maxY > maximumY && !(subview is WhisperView) {
-        maximumY = subview.frame.maxY
-      }
+            if subview.frame.maxY > maximumY && !(subview is WhisperView) {
+                maximumY = subview.frame.maxY
+            }
+        }
+
+        whisperView.frame.origin.y = maximumY
     }
 
-    whisperView.frame.origin.y = maximumY
-  }
-
-  func navigationController(_ navigationController: UINavigationController, didShow viewController: UIViewController, animated: Bool) {
-
-    for subview in navigationController.navigationBar.subviews where subview is WhisperView {
-      moveControllerViews(true)
-
-        if let index = navigationController.viewControllers.index(of: viewController) , index > 0 {
-            edgeInsetHeight = -self.whisperView.totalFrameHeight
-            performControllerMove(navigationController.viewControllers[Int(index) - 1])
-        break
-      }
-    }
-  }
 }
