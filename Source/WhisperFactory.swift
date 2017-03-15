@@ -104,8 +104,6 @@ class WhisperFactory: NSObject {
   // MARK: - Presentation
 
   func presentView() {
-    moveControllerViews(true)
-
     UIView.animate(withDuration: AnimationTiming.movement, animations: {
       self.whisperView.frame.size.height = self.whisperView.totalFrameHeight
       for subview in self.whisperView.transformViews {
@@ -121,8 +119,6 @@ class WhisperFactory: NSObject {
   }
 
   func showView() {
-    moveControllerViews(true)
-
     UIView.animate(withDuration: AnimationTiming.movement, animations: {
       self.whisperView.frame.size.height = self.whisperView.totalFrameHeight
       for subview in self.whisperView.transformViews {
@@ -158,8 +154,6 @@ class WhisperFactory: NSObject {
   }
 
   func hideView() {
-    moveControllerViews(false)
-
     UIView.animate(withDuration: AnimationTiming.movement, animations: {
       self.whisperView.frame.size.height = 0
       for subview in self.whisperView.transformViews {
@@ -207,49 +201,6 @@ class WhisperFactory: NSObject {
     action == .present ? presentView() : showView()
   }
 
-  // MARK: - Animations
-
-  func moveControllerViews(_ down: Bool) {
-    guard let navigationController = self.navigationController,
-        let visibleController = navigationController.visibleViewController
-      , Config.modifyInset
-      else { return }
-
-    let stackCount = navigationController.viewControllers.count
-
-    if down {
-      navigationStackCount = stackCount
-    } else if navigationStackCount != stackCount {
-      return
-    }
-
-    if !(edgeInsetHeight == self.whisperView.totalFrameHeight && down) {
-      edgeInsetHeight = down ? self.whisperView.totalFrameHeight : -self.whisperView.totalFrameHeight
-
-      UIView.animate(withDuration: AnimationTiming.movement, animations: {
-        self.performControllerMove(visibleController)
-      })
-    }
-  }
-
-  func performControllerMove(_ viewController: UIViewController) {
-    guard Config.modifyInset else { return }
-
-    if let tableView = viewController.view as? UITableView
-      , viewController is UITableViewController {
-        tableView.contentInset = UIEdgeInsetsMake(tableView.contentInset.top + edgeInsetHeight, tableView.contentInset.left, tableView.contentInset.bottom, tableView.contentInset.right)
-    } else if let collectionView = viewController.view as? UICollectionView
-      , viewController is UICollectionViewController {
-        collectionView.contentInset = UIEdgeInsetsMake(collectionView.contentInset.top + edgeInsetHeight, collectionView.contentInset.left, collectionView.contentInset.bottom, collectionView.contentInset.right)
-    } else {
-      for view in viewController.view.subviews {
-        if let scrollView = view as? UIScrollView {
-          scrollView.contentInset = UIEdgeInsetsMake(scrollView.contentInset.top + edgeInsetHeight, scrollView.contentInset.left, scrollView.contentInset.bottom, scrollView.contentInset.right)
-        }
-      }
-    }
-  }
-
   // MARK: - Handling screen orientation
 
   func orientationDidChange() {
@@ -290,16 +241,4 @@ extension WhisperFactory: UINavigationControllerDelegate {
     whisperView.frame.origin.y = maximumY
   }
 
-  func navigationController(_ navigationController: UINavigationController, didShow viewController: UIViewController, animated: Bool) {
-
-    for subview in navigationController.navigationBar.subviews where subview is WhisperView {
-      moveControllerViews(true)
-
-        if let index = navigationController.viewControllers.index(of: viewController) , index > 0 {
-            edgeInsetHeight = -self.whisperView.totalFrameHeight
-            performControllerMove(navigationController.viewControllers[Int(index) - 1])
-        break
-      }
-    }
-  }
 }
